@@ -1,22 +1,22 @@
 package main
 
 import (
+	"context"
 	"weatherbot/logger"
 
 	"github.com/joho/godotenv"
 )
 
-func main() {
-	InitEnv()
-
-	// b, err := bot.NewBot()
-	// logger.LogFatalError(err)
-
-}
-
-func InitEnv() {
+func init() {
 	// load values from .env file
 	if err := godotenv.Load("../.env"); err != nil {
-		logger.LogFatalError(err)
+		logger.NewSLogger().Fatal(context.Background(), err)
 	}
+}
+
+func main() {
+
+	// b, err := bot.NewBot()
+	// logger.NewSLogger().Fatal(context.Background(), err)
+
 }

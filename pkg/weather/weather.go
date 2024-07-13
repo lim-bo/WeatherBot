@@ -1,6 +1,7 @@
 package weather
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -23,13 +24,15 @@ type WeatherRepo interface {
 type OwmRepo struct {
 	cli    *http.Client
 	apiKey string
+	logger logger.SLogger
 }
 
 func New() *OwmRepo {
+	sl := logger.NewSLogger()
 	var owm OwmRepo
 	key, ok := os.LookupEnv("WEATHER_API_KEY")
 	if !ok {
-		logger.LogFatalError(errors.New("cannot get apiKey"))
+		sl.Fatal(context.Background(), errors.New("cannot get apiKey"))
 	}
 	owm.apiKey = key
 	cl := &http.Client{
@@ -56,6 +59,9 @@ func (o *OwmRepo) GetCurrentWeather(cityName string) (entity.WeatherCast, error)
 	}
 	defer resp.Body.Close()
 
+	rawBody := make([]byte, 0)
+	req.Body.Read(rawBody)
+
 	err = json.NewDecoder(req.Body).Decode(&out)
 	if err != nil {
 		return out, errors.New("weather repo: unmarshalling: " + err.Error())
@@ -64,4 +70,8 @@ func (o *OwmRepo) GetCurrentWeather(cityName string) (entity.WeatherCast, error)
 		return out, errors.New("weather repo: request: bad request")
 	}
 	return out, nil
+}
+
+func (o *OwmRepo) ValidateCityName(cityName string) {
+
 }

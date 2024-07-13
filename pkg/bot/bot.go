@@ -1,7 +1,8 @@
 package bot
 
 import (
-	"fmt"
+	"context"
+	"errors"
 	"os"
 	"weatherbot/logger"
 
@@ -9,25 +10,34 @@ import (
 )
 
 type Bot struct {
-	tgbot.BotAPI
+	api    tgbot.BotAPI
+	logger *logger.SLogger
 }
 
 // Constructor
 func NewBot() (*Bot, error) {
+	sl := logger.NewSLogger()
 	botToken, ok := os.LookupEnv("BOT_TOKEN")
 	if !ok {
-		logger.LogFatalError(fmt.Errorf(`invalid bot wtoken`))
+		sl.Fatal(context.Background(), errors.New(`invalid bot wtoken`))
 	}
 
 	newBot, err := tgbot.NewBotAPI(botToken)
-	logger.LogFatalError(err)
-	return &Bot{*newBot}, nil
+	if err != nil {
+		sl.Fatal(context.Background(), err)
+	}
+	return &Bot{
+		api:    *newBot,
+		logger: sl,
+	}, nil
 }
 
 // Run-method which will be called from main
 func (b *Bot) Serve() {
-	upd, err := b.GetUpdatesChan(tgbot.NewUpdate(0))
-	logger.LogFatalError(err)
+	upd, err := b.api.GetUpdatesChan(tgbot.NewUpdate(0))
+	if err != nil {
+		b.logger.Fatal(context.Background(), err)
+	}
 	// TO-DO remove placeholder
 	for _ = range upd {
 

@@ -1,9 +1,0 @@
-read ../: Incorrect function.
-read ../: Incorrect function.
-read ../: Incorrect function.
-open ../../.env: The system cannot find the file specified.
-open .env: The system cannot find the file specified.
-read ../..: Incorrect function.
-read ../..: Incorrect function.
-read ..: Incorrect function.
-open .env: The system cannot find the file specified.

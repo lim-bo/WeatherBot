@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 	"weatherbot/pkg/weather"
+
+	"github.com/joho/godotenv"
 )
 
 type testCase struct {
@@ -12,6 +14,10 @@ type testCase struct {
 }
 
 func TestCurrentWeather(t *testing.T) {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		t.Fatal(errors.New(".env loading fail"))
+	}
 	testCases := []testCase{
 		{
 			"Москва",
