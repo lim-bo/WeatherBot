@@ -1,0 +1,30 @@
+syntax = "proto3";
+// protoc --go-grpc_out=../../internal/weatherApi *.proto
+// protoc --go_out=../../internal/weatherApi *.proto
+// protoc --go-grpc-gateway_out=../../internal/weatherApi *.proto
+// protoc --swagger_out=../swagger/ *.proto
+
+
+
+option go_package = "internal/weatherApi";
+import "google/api/annotations.proto";
+
+package weatherApi;
+
+message City {
+    string name = 1;
+}
+
+message WeatherCast {
+    int32 statusCode = 1;
+    map<string, double> main = 2;
+    map<string, double> wind = 3;
+}
+
+service WeatherCastService {
+    rpc GetCurrentWeather (City) returns (WeatherCast) {
+        option (google.api.http) = {
+            get: "/v1/weather/{name}"
+        };
+    }
+}

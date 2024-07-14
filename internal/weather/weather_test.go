@@ -3,7 +3,7 @@ package weather_test
 import (
 	"errors"
 	"testing"
-	"weatherbot/pkg/weather"
+	"weatherbot/internal/weather"
 
 	"github.com/joho/godotenv"
 )
