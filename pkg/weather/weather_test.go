@@ -25,14 +25,15 @@ func TestCurrentWeather(t *testing.T) {
 		},
 		{
 			"asdajdkajwasd",
-			errors.New("weather repo: request: bad request"),
+			errors.New("bad request"),
 		},
 	}
 	testRepo := weather.New()
 	for _, cs := range testCases {
-		_, err := testRepo.GetCurrentWeather(cs.CityName)
+		cast, err := testRepo.GetCurrentWeather(cs.CityName)
 		if err != nil && err.Error() != cs.Expect.Error() {
 			t.Fatalf("cityName: %s\n error: %s\n expected: %s\n", cs.CityName, err.Error(), cs.Expect.Error())
 		}
+		t.Log(cast)
 	}
 }

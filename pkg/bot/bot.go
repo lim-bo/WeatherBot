@@ -32,7 +32,7 @@ func NewBot() (*Bot, error) {
 	}, nil
 }
 
-// Run-method which will be called from main
+// Run-method
 func (b *Bot) Serve() {
 	upd, err := b.api.GetUpdatesChan(tgbot.NewUpdate(0))
 	if err != nil {

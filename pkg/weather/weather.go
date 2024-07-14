@@ -4,16 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"time"
 	"weatherbot/entity"
 	"weatherbot/logger"
 )
 
-var requestTemplate = "https://api.openweathermap.org/data/2.5/weather?q=%s&appid=%s&lang=ru"
+var (
+	requestURL = "https://api.openweathermap.org/data/2.5/weather"
+)
 
 type WeatherRepo interface {
 	GetCurrentWeather(cityName string) (entity.WeatherCast, error)
@@ -24,15 +25,15 @@ type WeatherRepo interface {
 type OwmRepo struct {
 	cli    *http.Client
 	apiKey string
-	logger logger.SLogger
+	logger *logger.SLogger
 }
 
 func New() *OwmRepo {
 	sl := logger.NewSLogger()
-	var owm OwmRepo
+	owm := OwmRepo{logger: sl}
 	key, ok := os.LookupEnv("WEATHER_API_KEY")
 	if !ok {
-		sl.Fatal(context.Background(), errors.New("cannot get apiKey"))
+		owm.logger.Fatal(context.Background(), errors.New("cannot get apiKey"))
 	}
 	owm.apiKey = key
 	cl := &http.Client{
@@ -42,36 +43,36 @@ func New() *OwmRepo {
 	return &owm
 }
 
-func (o *OwmRepo) GetCurrentWeather(cityName string) (entity.WeatherCast, error) {
-	var out entity.WeatherCast
-	url, err := url.Parse(fmt.Sprintf(requestTemplate, cityName, o.apiKey))
-	if err != nil {
-		return out, errors.New("weather repo: " + err.Error())
-	}
+func (o *OwmRepo) GetCurrentWeather(cityName string) (*entity.WeatherCast, error) {
+	out := entity.WeatherCast{}
 
-	req := http.Request{
-		URL: url,
-	}
-	resp, err := o.cli.Do(&req)
+	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
-		resp.Body.Close()
-		return out, errors.New("weather repo: request: " + err.Error())
+		return nil, err
+	}
+	q := req.URL.Query()
+	q.Add("q", cityName)
+	q.Add("appid", o.apiKey)
+	q.Add("lang", "ru")
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := o.cli.Do(req)
+	if err != nil {
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	rawBody := make([]byte, 0)
-	req.Body.Read(rawBody)
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("bad request")
+	}
 
-	err = json.NewDecoder(req.Body).Decode(&out)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return out, errors.New("weather repo: unmarshalling: " + err.Error())
+		return nil, err
 	}
-	if out.ResponseCode != http.StatusOK {
-		return out, errors.New("weather repo: request: bad request")
+	err = json.Unmarshal(body, &out)
+	if err != nil {
+		return nil, err
 	}
-	return out, nil
-}
-
-func (o *OwmRepo) ValidateCityName(cityName string) {
-
+	return &out, nil
 }
