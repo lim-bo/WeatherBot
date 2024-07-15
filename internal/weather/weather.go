@@ -1,12 +1,10 @@
 package weather
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
-	"os"
 	"time"
 	"weatherbot/entity"
 	"weatherbot/logger"
@@ -16,10 +14,6 @@ var (
 	requestURL = "https://api.openweathermap.org/data/2.5/weather"
 )
 
-type WeatherRepo interface {
-	GetCurrentWeather(cityName string) (entity.WeatherCast, error)
-}
-
 // WeatherRepo implementation for OperWeatherMap api
 
 type OwmRepo struct {
@@ -28,13 +22,10 @@ type OwmRepo struct {
 	logger *logger.SLogger
 }
 
-func New() *OwmRepo {
+func New(key string) *OwmRepo {
 	sl := logger.NewSLogger()
 	owm := OwmRepo{logger: sl}
-	key, ok := os.LookupEnv("WEATHER_API_KEY")
-	if !ok {
-		owm.logger.Fatal(context.Background(), errors.New("cannot get apiKey"))
-	}
+
 	owm.apiKey = key
 	cl := &http.Client{
 		Timeout: time.Second * 20,
