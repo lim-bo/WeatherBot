@@ -3,7 +3,9 @@ package weather
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"time"
 	"weatherbot/entity"
@@ -28,7 +30,13 @@ func New(key string) *OwmRepo {
 
 	owm.apiKey = key
 	cl := &http.Client{
-		Timeout: time.Second * 20,
+		Transport: &http.Transport{
+			Dial: (&net.Dialer{
+				Timeout:   60 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).Dial,
+			TLSHandshakeTimeout: 60 * time.Second,
+		},
 	}
 	owm.cli = cl
 	return &owm
@@ -66,4 +74,14 @@ func (o *OwmRepo) GetCurrentWeather(cityName string) (*entity.WeatherCast, error
 		return nil, err
 	}
 	return &out, nil
+}
+
+var currentWeatherTmpl = "Локация: %s\nТекущая температура: %d°C, по ощущениям: %d°C\nСкорость ветра: %d м/c\nНаправление ветра: %d°"
+
+func (o *OwmRepo) MakeCurrentWeatherCast(wc *entity.WeatherCast, cityName string) string {
+	return fmt.Sprintf(currentWeatherTmpl, cityName, int64(wc.Main["temp"])-273,
+		int64(wc.Main["feels_like"])-273,
+		int64(wc.Wind["speed"]),
+		int64(wc.Wind["deg"]),
+	)
 }

@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	WeatherCastService_GetCurrentWeather_FullMethodName = "/weatherApi.WeatherCastService/GetCurrentWeather"
+	WeatherCastService_GetCurrentWeather_FullMethodName      = "/weatherApi.WeatherCastService/GetCurrentWeather"
+	WeatherCastService_MakeCurrentWeatherCast_FullMethodName = "/weatherApi.WeatherCastService/MakeCurrentWeatherCast"
 )
 
 // WeatherCastServiceClient is the client API for WeatherCastService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WeatherCastServiceClient interface {
 	GetCurrentWeather(ctx context.Context, in *City, opts ...grpc.CallOption) (*WeatherCast, error)
+	MakeCurrentWeatherCast(ctx context.Context, in *WeatherCast, opts ...grpc.CallOption) (*Cast, error)
 }
 
 type weatherCastServiceClient struct {
@@ -47,11 +49,22 @@ func (c *weatherCastServiceClient) GetCurrentWeather(ctx context.Context, in *Ci
 	return out, nil
 }
 
+func (c *weatherCastServiceClient) MakeCurrentWeatherCast(ctx context.Context, in *WeatherCast, opts ...grpc.CallOption) (*Cast, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Cast)
+	err := c.cc.Invoke(ctx, WeatherCastService_MakeCurrentWeatherCast_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WeatherCastServiceServer is the server API for WeatherCastService service.
 // All implementations must embed UnimplementedWeatherCastServiceServer
 // for forward compatibility
 type WeatherCastServiceServer interface {
 	GetCurrentWeather(context.Context, *City) (*WeatherCast, error)
+	MakeCurrentWeatherCast(context.Context, *WeatherCast) (*Cast, error)
 	mustEmbedUnimplementedWeatherCastServiceServer()
 }
 
@@ -61,6 +74,9 @@ type UnimplementedWeatherCastServiceServer struct {
 
 func (UnimplementedWeatherCastServiceServer) GetCurrentWeather(context.Context, *City) (*WeatherCast, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentWeather not implemented")
+}
+func (UnimplementedWeatherCastServiceServer) MakeCurrentWeatherCast(context.Context, *WeatherCast) (*Cast, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MakeCurrentWeatherCast not implemented")
 }
 func (UnimplementedWeatherCastServiceServer) mustEmbedUnimplementedWeatherCastServiceServer() {}
 
@@ -93,6 +109,24 @@ func _WeatherCastService_GetCurrentWeather_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WeatherCastService_MakeCurrentWeatherCast_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WeatherCast)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WeatherCastServiceServer).MakeCurrentWeatherCast(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WeatherCastService_MakeCurrentWeatherCast_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WeatherCastServiceServer).MakeCurrentWeatherCast(ctx, req.(*WeatherCast))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WeatherCastService_ServiceDesc is the grpc.ServiceDesc for WeatherCastService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -103,6 +137,10 @@ var WeatherCastService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCurrentWeather",
 			Handler:    _WeatherCastService_GetCurrentWeather_Handler,
+		},
+		{
+			MethodName: "MakeCurrentWeatherCast",
+			Handler:    _WeatherCastService_MakeCurrentWeatherCast_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

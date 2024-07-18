@@ -4,10 +4,11 @@ import (
 	"context"
 	"log"
 	"weatherbot/internal/bot"
-	"weatherbot/internal/weather"
+	"weatherbot/internal/weatherApi"
 	"weatherbot/logger"
 
 	"github.com/spf13/viper"
+	"google.golang.org/grpc"
 )
 
 var v *viper.Viper
@@ -30,9 +31,15 @@ func init() {
 
 func main() {
 
-	b, err := bot.NewBot(v.GetString("BOT_TOKEN"), weather.New(v.GetString("WEATHER_API_KEY")))
+	b, err := bot.NewBot(v.GetString("BOT_TOKEN"))
 	if err != nil {
 		logger.NewSLogger().Fatal(context.Background(), err)
 	}
+	dial, err := grpc.NewClient(":8081", grpc.WithInsecure())
+	if err != nil {
+		b.Logger.Fatal(context.Background(), err)
+	}
+	cli := weatherApi.NewWeatherCastServiceClient(dial)
+	b.WCClient = cli
 	b.Serve()
 }

@@ -6,7 +6,7 @@ syntax = "proto3";
 
 
 
-option go_package = "internal/weatherApi";
+option go_package = ".";
 import "google/api/annotations.proto";
 
 package weatherApi;
@@ -15,10 +15,15 @@ message City {
     string name = 1;
 }
 
+message Cast {
+    string text = 1;
+}
+
 message WeatherCast {
     int32 statusCode = 1;
     map<string, double> main = 2;
     map<string, double> wind = 3;
+    string prefCityName = 4;
 }
 
 service WeatherCastService {
@@ -27,4 +32,5 @@ service WeatherCastService {
             get: "/v1/weather/{name}"
         };
     }
+    rpc MakeCurrentWeatherCast (WeatherCast) returns (Cast) {}
 }
