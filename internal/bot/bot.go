@@ -136,11 +136,6 @@ func (b *Bot) Serve() {
 				if err != nil {
 					b.Logger.Error(context.Background(), err)
 					return
-				}
-
-				if err != nil {
-					b.Logger.Error(context.Background(), err)
-					return
 				} else {
 					b.Logger.LogWithGroupAtLevel(context.Background(),
 						logger.LevelInfo,
@@ -151,6 +146,7 @@ func (b *Bot) Serve() {
 				}
 				// Getting string representation of weathercast
 				// from grpc service via client
+				weatherCast.PrefCityName = b.userStates[chatId].chosenCity
 				cast, err := b.WCClient.MakeCurrentWeatherCast(context.Background(), weatherCast)
 				if err != nil {
 					b.Logger.Error(context.Background(), err)
