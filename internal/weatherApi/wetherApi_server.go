@@ -3,12 +3,28 @@ package weatherApi
 import (
 	"context"
 	"weatherbot/entity"
+	userdb "weatherbot/internal/userDB"
 	"weatherbot/internal/weather"
 )
 
+// Repository for manage users' info
+type UserManagerI interface {
+	GetUserPreferences(int32) (string, error)
+	SetUserPreference(int32, string) error
+	CreateUserPreferences(int32, string) error
+	GetUser(int32) (*userdb.User, error)
+}
+
 type WeatherApiServer struct {
-	repo *weather.OwmRepo
+	repo        *weather.OwmRepo
+	userManager UserManagerI
 	UnimplementedWeatherCastServiceServer
+}
+
+func NewWeatherApiSever(apikey string, dbCfg userdb.DBConfig) *WeatherApiServer {
+	return &WeatherApiServer{
+		repo: weather.New(apikey),
+	}
 }
 
 func (srv *WeatherApiServer) GetCurrentWeather(ctx context.Context, city *City) (*WeatherCast, error) {
@@ -30,10 +46,4 @@ func (srv *WeatherApiServer) MakeCurrentWeatherCast(ctx context.Context, wc *Wea
 		ResponseCode: int(wc.StatusCode),
 	}, wc.PrefCityName)
 	return &Cast{Text: out}, nil
-}
-
-func NewWeatherApiSever(apikey string) *WeatherApiServer {
-	return &WeatherApiServer{
-		repo: weather.New(apikey),
-	}
 }

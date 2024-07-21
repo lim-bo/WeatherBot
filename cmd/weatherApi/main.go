@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net"
+	userdb "weatherbot/internal/userDB"
 	"weatherbot/internal/weatherApi"
 
 	"github.com/spf13/viper"
@@ -28,7 +29,14 @@ func init() {
 }
 
 func main() {
-	srv := weatherApi.NewWeatherApiSever(v.GetString("WEATHER_API_KEY"))
+	dbCfg := userdb.DBConfig{
+		User:   v.GetString("DB_USER"),
+		Pass:   v.GetString("DB_PASSWORD"),
+		DBName: v.GetString("DB_NAME"),
+		Host:   "localhost",
+		Port:   "5430",
+	}
+	srv := weatherApi.NewWeatherApiSever(v.GetString("WEATHER_API_KEY"), dbCfg)
 	lis, err := net.Listen("tcp", ":8081")
 	if err != nil {
 		log.Fatal(err)

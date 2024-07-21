@@ -2,22 +2,60 @@ package userdb
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"sync"
 
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
+type dbPool interface {
+	QueryRow(context.Context, string, ...interface{}) pgx.Row
+	Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error)
+}
+
 type UserManager struct {
-	mu   sync.RWMutex
-	pool *pgxpool.Pool
+	Mu   *sync.RWMutex
+	Pool dbPool
+}
+
+type User struct {
+	Id     int32
+	City   string
+	Status int32
+}
+
+type DBConfig struct {
+	User   string
+	Pass   string
+	DBName string
+	Host   string
+	Port   string
+}
+
+func NewUserDB(cfg DBConfig) *UserManager {
+	pool, err := pgxpool.Connect(
+		context.Background(),
+		fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", cfg.User, cfg.Pass, cfg.Host, cfg.Port, cfg.DBName),
+	)
+	if err != nil {
+		log.Fatal("db connection error", err)
+	}
+	return &UserManager{
+		Pool: pool,
+		Mu:   &sync.RWMutex{},
+	}
 }
 
 func (um *UserManager) GetUserPreferences(id int32) (string, error) {
-	um.mu.RLock()
-	row := um.pool.QueryRow(context.Background(), "SELECT user_id, city FROM preferences where user_id = $1", id)
-	um.mu.RUnlock()
+	um.Mu.RLock()
+	row := um.Pool.QueryRow(context.Background(), "SELECT user_id, city FROM preferences where user_id = $1", id)
+	um.Mu.RUnlock()
 	var out string
-	err := row.Scan(&out)
+	var respID int32
+	err := row.Scan(&respID, &out)
 	if err != nil {
 		return "", err
 	}
@@ -25,11 +63,39 @@ func (um *UserManager) GetUserPreferences(id int32) (string, error) {
 }
 
 func (um *UserManager) SetUserPreference(id int32, cityName string) error {
-	um.mu.Lock()
-	tg, err := um.pool.Exec(context.Background(), "UPDATE preferences SET city = $1 WHERE user_id = $2", cityName, id)
-	um.mu.RUnlock()
-	if tg.RowsAffected() == 0 || err != nil {
+	um.Mu.RLock()
+	tg, err := um.Pool.Exec(context.Background(), "UPDATE preferences SET city = $1 WHERE user_id = $2", cityName, id)
+	um.Mu.RUnlock()
+	if err == nil && tg.RowsAffected() == 0 {
+		err = um.CreateUserPreferences(id, cityName)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (um *UserManager) CreateUserPreferences(id int32, cityName string) error {
+	um.Mu.Lock()
+	defer um.Mu.Unlock()
+	_, err := um.Pool.Exec(context.Background(), "INSERT INTO preferences(user_id, city) VALUES ($1, $2)", id, cityName)
+	return err
+}
+
+// Returns all info about user.
+// If there is not user with given id,
+// returns pgx.ErrNoRows
+func (um *UserManager) GetUser(id int32) (*User, error) {
+	um.Mu.RLock()
+	row := um.Pool.QueryRow(context.Background(), "SELECT city, status FROM preferences WHERE user_id = $1", id)
+	um.Mu.RUnlock()
+	var out User
+	err := row.Scan(&out.City, &out.Status)
+	if err != nil {
+		return nil, err
+	}
+	out.Id = id
+	return &out, nil
 }

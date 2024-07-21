@@ -1,4 +1,5 @@
 CREATE TABLE IF NOT EXISTS preferences (
-    id SERIAL PRIMARY KEY,
-    city varchar(64) not null default 'Moscow'
+    id integer PRIMARY KEY,
+    city varchar(64) not null default 'Moscow',
+    status integer not null default 0
 );
