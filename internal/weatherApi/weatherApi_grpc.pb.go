@@ -21,6 +21,10 @@ const _ = grpc.SupportPackageIsVersion8
 const (
 	WeatherCastService_GetCurrentWeather_FullMethodName      = "/weatherApi.WeatherCastService/GetCurrentWeather"
 	WeatherCastService_MakeCurrentWeatherCast_FullMethodName = "/weatherApi.WeatherCastService/MakeCurrentWeatherCast"
+	WeatherCastService_GetUser_FullMethodName                = "/weatherApi.WeatherCastService/GetUser"
+	WeatherCastService_SetUser_FullMethodName                = "/weatherApi.WeatherCastService/SetUser"
+	WeatherCastService_CheckUser_FullMethodName              = "/weatherApi.WeatherCastService/CheckUser"
+	WeatherCastService_CreateUser_FullMethodName             = "/weatherApi.WeatherCastService/CreateUser"
 )
 
 // WeatherCastServiceClient is the client API for WeatherCastService service.
@@ -29,6 +33,10 @@ const (
 type WeatherCastServiceClient interface {
 	GetCurrentWeather(ctx context.Context, in *City, opts ...grpc.CallOption) (*WeatherCast, error)
 	MakeCurrentWeatherCast(ctx context.Context, in *WeatherCast, opts ...grpc.CallOption) (*Cast, error)
+	GetUser(ctx context.Context, in *UID, opts ...grpc.CallOption) (*User, error)
+	SetUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*Error, error)
+	CheckUser(ctx context.Context, in *UID, opts ...grpc.CallOption) (*IsExist, error)
+	CreateUser(ctx context.Context, in *UID, opts ...grpc.CallOption) (*Error, error)
 }
 
 type weatherCastServiceClient struct {
@@ -59,12 +67,56 @@ func (c *weatherCastServiceClient) MakeCurrentWeatherCast(ctx context.Context, i
 	return out, nil
 }
 
+func (c *weatherCastServiceClient) GetUser(ctx context.Context, in *UID, opts ...grpc.CallOption) (*User, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(User)
+	err := c.cc.Invoke(ctx, WeatherCastService_GetUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *weatherCastServiceClient) SetUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*Error, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Error)
+	err := c.cc.Invoke(ctx, WeatherCastService_SetUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *weatherCastServiceClient) CheckUser(ctx context.Context, in *UID, opts ...grpc.CallOption) (*IsExist, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IsExist)
+	err := c.cc.Invoke(ctx, WeatherCastService_CheckUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *weatherCastServiceClient) CreateUser(ctx context.Context, in *UID, opts ...grpc.CallOption) (*Error, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Error)
+	err := c.cc.Invoke(ctx, WeatherCastService_CreateUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WeatherCastServiceServer is the server API for WeatherCastService service.
 // All implementations must embed UnimplementedWeatherCastServiceServer
 // for forward compatibility
 type WeatherCastServiceServer interface {
 	GetCurrentWeather(context.Context, *City) (*WeatherCast, error)
 	MakeCurrentWeatherCast(context.Context, *WeatherCast) (*Cast, error)
+	GetUser(context.Context, *UID) (*User, error)
+	SetUser(context.Context, *User) (*Error, error)
+	CheckUser(context.Context, *UID) (*IsExist, error)
+	CreateUser(context.Context, *UID) (*Error, error)
 	mustEmbedUnimplementedWeatherCastServiceServer()
 }
 
@@ -77,6 +129,18 @@ func (UnimplementedWeatherCastServiceServer) GetCurrentWeather(context.Context, 
 }
 func (UnimplementedWeatherCastServiceServer) MakeCurrentWeatherCast(context.Context, *WeatherCast) (*Cast, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MakeCurrentWeatherCast not implemented")
+}
+func (UnimplementedWeatherCastServiceServer) GetUser(context.Context, *UID) (*User, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
+}
+func (UnimplementedWeatherCastServiceServer) SetUser(context.Context, *User) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetUser not implemented")
+}
+func (UnimplementedWeatherCastServiceServer) CheckUser(context.Context, *UID) (*IsExist, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckUser not implemented")
+}
+func (UnimplementedWeatherCastServiceServer) CreateUser(context.Context, *UID) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
 }
 func (UnimplementedWeatherCastServiceServer) mustEmbedUnimplementedWeatherCastServiceServer() {}
 
@@ -127,6 +191,78 @@ func _WeatherCastService_MakeCurrentWeatherCast_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WeatherCastService_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WeatherCastServiceServer).GetUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WeatherCastService_GetUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WeatherCastServiceServer).GetUser(ctx, req.(*UID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WeatherCastService_SetUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(User)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WeatherCastServiceServer).SetUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WeatherCastService_SetUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WeatherCastServiceServer).SetUser(ctx, req.(*User))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WeatherCastService_CheckUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WeatherCastServiceServer).CheckUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WeatherCastService_CheckUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WeatherCastServiceServer).CheckUser(ctx, req.(*UID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WeatherCastService_CreateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WeatherCastServiceServer).CreateUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WeatherCastService_CreateUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WeatherCastServiceServer).CreateUser(ctx, req.(*UID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WeatherCastService_ServiceDesc is the grpc.ServiceDesc for WeatherCastService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -141,6 +277,22 @@ var WeatherCastService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MakeCurrentWeatherCast",
 			Handler:    _WeatherCastService_MakeCurrentWeatherCast_Handler,
+		},
+		{
+			MethodName: "GetUser",
+			Handler:    _WeatherCastService_GetUser_Handler,
+		},
+		{
+			MethodName: "SetUser",
+			Handler:    _WeatherCastService_SetUser_Handler,
+		},
+		{
+			MethodName: "CheckUser",
+			Handler:    _WeatherCastService_CheckUser_Handler,
+		},
+		{
+			MethodName: "CreateUser",
+			Handler:    _WeatherCastService_CreateUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

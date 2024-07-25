@@ -30,16 +30,16 @@ func init() {
 }
 
 func main() {
-
-	b, err := bot.NewBot(v.GetString("BOT_TOKEN"))
-	if err != nil {
-		logger.NewSLogger().Fatal(context.Background(), err)
-	}
+	logger := logger.NewSLogger()
 	dial, err := grpc.NewClient(":8081", grpc.WithInsecure())
 	if err != nil {
-		b.Logger.Fatal(context.Background(), err)
+		logger.Fatal(context.Background(), err)
 	}
 	cli := weatherApi.NewWeatherCastServiceClient(dial)
-	b.WCClient = cli
+	b, err := bot.NewBot(v.GetString("BOT_TOKEN"), cli)
+	if err != nil {
+		logger.Fatal(context.Background(), err)
+	}
+	b.Logger = logger
 	b.Serve()
 }

@@ -4,40 +4,34 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"sync"
 	"weatherbot/internal/weatherApi"
 	"weatherbot/logger"
 
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-// Type for represent user preferences about
-// cuty for cast
-type userState struct {
-	isAwaitingToResp bool
-	chosenCity       string
-}
+var (
+	WaitingToRespState int32 = 1
+	DefaultState       int32 = 0
+)
 
 type Bot struct {
-	api        tgbot.BotAPI
-	Logger     *logger.SLogger
-	WCClient   weatherApi.WeatherCastServiceClient
-	mu         sync.RWMutex
-	userStates map[int64]*userState
+	api      tgbot.BotAPI
+	Logger   *logger.SLogger
+	WCClient weatherApi.WeatherCastServiceClient
 }
 
 // Constructor
-func NewBot(token string) (*Bot, error) {
+func NewBot(token string, wcClient weatherApi.WeatherCastServiceClient) (*Bot, error) {
 	sl := logger.NewSLogger()
 	newBot, err := tgbot.NewBotAPI(token)
 	if err != nil {
 		sl.Fatal(context.Background(), err)
 	}
 	return &Bot{
-		api:        *newBot,
-		Logger:     sl,
-		mu:         sync.RWMutex{},
-		userStates: make(map[int64]*userState, 0),
+		api:      *newBot,
+		Logger:   sl,
+		WCClient: wcClient,
 	}, nil
 }
 
@@ -70,103 +64,7 @@ func (b *Bot) Serve() {
 		if update.Message == nil { // ignore non-Message updates
 			continue
 		}
-		go func(update tgbot.Update) {
-			chatId := update.Message.Chat.ID
-			b.mu.Lock()
-			if _, ok := b.userStates[chatId]; !ok {
-				b.userStates[chatId] = &userState{}
-				msg := tgbot.NewMessage(chatId, "Приветствую))")
-				msg.ReplyMarkup = keyBoard
-				if _, err := b.api.Send(msg); err != nil {
-					b.Logger.Error(context.Background(), err)
-				}
-			}
-			b.mu.Unlock()
-			// Changing prerfered city to weathercast
-			b.mu.Lock()
-			if !update.Message.IsCommand() && b.userStates[chatId].isAwaitingToResp {
-				b.userStates[chatId].chosenCity = update.Message.Text
-				b.userStates[chatId].isAwaitingToResp = false
-				b.mu.Unlock()
-				_, err := b.api.Send(tgbot.NewMessage(chatId, "Принято"))
-				if err != nil {
-					b.Logger.Error(context.Background(), err)
-				}
-				return
-			}
-			b.mu.Unlock()
-			var command string
-			switch update.Message.Text {
-			case "Текущая погода":
-				command = "current"
-			case "Сменить город":
-				command = "change"
-			}
-			if command == "" {
-				b.SendWarn(chatId, "Выберите команду из предложенных")
-				return
-			}
-
-			// Handling commands
-			switch command {
-			case "change":
-				// Getting bot ready to recieve name of the cuty
-				// which weather user want to get
-				b.mu.Lock()
-				b.userStates[chatId].isAwaitingToResp = true
-				b.mu.Unlock()
-				response := tgbot.NewMessage(chatId, "Укажите город, к которому хотели бы получать прогноз")
-				if _, err := b.api.Send(response); err != nil {
-					b.Logger.Error(context.Background(), err)
-				}
-
-			case "current":
-				b.mu.RLock()
-				// Handling situation if user didn't choose city for cast
-				if b.userStates[chatId].chosenCity == "" {
-					b.SendWarn(chatId, "Город не выбран,\nдля получения прогноза укажите город")
-					b.mu.RUnlock()
-					return
-				}
-				// Getting weatherCast from grpc service via client
-				weatherCast, err := b.WCClient.GetCurrentWeather(context.Background(), &weatherApi.City{
-					Name: b.userStates[chatId].chosenCity,
-				})
-				b.mu.RUnlock()
-				if err != nil {
-					b.Logger.Error(context.Background(), err)
-					return
-				} else {
-					b.Logger.LogWithGroupAtLevel(context.Background(),
-						logger.LevelInfo,
-						"weather request",
-						slog.String("city", b.userStates[chatId].chosenCity),
-						slog.String("user", update.Message.From.UserName),
-					)
-				}
-				// Getting string representation of weathercast
-				// from grpc service via client
-				weatherCast.PrefCityName = b.userStates[chatId].chosenCity
-				cast, err := b.WCClient.MakeCurrentWeatherCast(context.Background(), weatherCast)
-				if err != nil {
-					b.Logger.Error(context.Background(), err)
-					return
-				}
-				response := tgbot.NewMessage(chatId, cast.Text)
-				_, err = b.api.Send(response)
-				if err != nil {
-					b.Logger.Error(context.Background(), err)
-				}
-			default:
-				b.Logger.LogWithGroupAtLevel(context.Background(),
-					logger.LevelTrace,
-					"unsupported message",
-					slog.String("msg", update.Message.Text),
-				)
-				b.SendWarn(chatId, "Выберите команду из предложенных")
-			}
-
-		}(update)
+		go b.handleMessage(update)
 	}
 }
 
@@ -176,5 +74,124 @@ func (b *Bot) SendWarn(chatId int64, text string) {
 	_, err := b.api.Send(tgbot.NewMessage(chatId, text))
 	if err != nil {
 		b.Logger.Error(context.Background(), err)
+	}
+}
+
+func (b *Bot) handleMessage(update tgbot.Update) {
+	chatId := update.Message.Chat.ID
+	// Checking if user with recieved chatid exist
+	exist, err := b.WCClient.CheckUser(context.Background(), &weatherApi.UID{
+		Value: chatId,
+	})
+	if err != nil {
+		b.Logger.Error(context.Background(), err)
+		return
+	}
+	// if not, creating new user in db
+	if !exist.Value {
+		_, err := b.WCClient.CreateUser(context.Background(), &weatherApi.UID{Value: chatId})
+		if err != nil {
+			b.Logger.Error(context.Background(), err)
+			return
+		}
+		msg := tgbot.NewMessage(chatId, "Приветствую))")
+		msg.ReplyMarkup = keyBoard
+		if _, err := b.api.Send(msg); err != nil {
+			b.Logger.Error(context.Background(), err)
+		}
+	}
+	// Recieving user to work with it
+	user, err := b.WCClient.GetUser(context.Background(), &weatherApi.UID{Value: chatId})
+	if err != nil {
+		b.Logger.Error(context.Background(), err)
+		return
+	}
+	// Changing prerfered city to weathercast
+	if !update.Message.IsCommand() && user.Status == WaitingToRespState {
+		user.City = update.Message.Text
+		user.Status = DefaultState
+		_, err := b.api.Send(tgbot.NewMessage(chatId, "Принято"))
+		if err != nil {
+			b.Logger.Error(context.Background(), err)
+			return
+		}
+		// refreshing user preference
+		_, err = b.WCClient.SetUser(context.Background(), &weatherApi.User{
+			Id:     user.Id,
+			Status: user.Status,
+			City:   user.City,
+		})
+		if err != nil {
+			b.Logger.Error(context.Background(), err)
+		}
+		return
+	}
+	var command string
+	switch update.Message.Text {
+	case "Текущая погода":
+		command = "current"
+	case "Сменить город":
+		command = "change"
+	}
+	if command == "" {
+		b.SendWarn(chatId, "Выберите команду из предложенных")
+		return
+	}
+	// Handling commands
+	switch command {
+	case "change":
+		// Getting bot ready to recieve name of the cuty
+		// which weather user want to get
+		user.Status = WaitingToRespState
+		b.WCClient.SetUser(context.Background(), &weatherApi.User{
+			Id:     user.Id,
+			City:   user.City,
+			Status: user.Status,
+		})
+		response := tgbot.NewMessage(chatId, "Укажите город, к которому хотели бы получать прогноз")
+		if _, err := b.api.Send(response); err != nil {
+			b.Logger.Error(context.Background(), err)
+		}
+	case "current":
+		// Handling situation if user didn't choose city for cast
+		if user.City == "" {
+			b.SendWarn(chatId, "Город не выбран,\nдля получения прогноза укажите город")
+			return
+		}
+		// Getting weatherCast from grpc service via client
+		weatherCast, err := b.WCClient.GetCurrentWeather(context.Background(), &weatherApi.City{
+			Name: user.City,
+		})
+		if err != nil {
+			b.Logger.Error(context.Background(), err)
+			return
+		} else {
+			b.Logger.LogWithGroupAtLevel(context.Background(),
+				logger.LevelInfo,
+				"weather request",
+				slog.String("city", user.City),
+				slog.String("user", update.Message.From.UserName),
+			)
+		}
+		// Getting string representation of weathercast
+		// from grpc service via client
+		weatherCast.PrefCityName = user.City
+		cast, err := b.WCClient.MakeCurrentWeatherCast(context.Background(), weatherCast)
+		if err != nil {
+			b.Logger.Error(context.Background(), err)
+			return
+		}
+		response := tgbot.NewMessage(chatId, cast.Text)
+		_, err = b.api.Send(response)
+		if err != nil {
+			b.Logger.Error(context.Background(), err)
+		}
+	default:
+		b.Logger.LogWithGroupAtLevel(context.Background(),
+			logger.LevelTrace,
+			"unsupported message",
+			slog.String("msg", update.Message.Text),
+		)
+		b.SendWarn(chatId, "Выберите команду из предложенных")
 	}
 }

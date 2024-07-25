@@ -26,7 +26,7 @@ func TestDBGet(t *testing.T) {
 		Pool: mockpool,
 		Mu:   &sync.RWMutex{},
 	}
-	respCity, err := um.GetUserPreferences(int32(requestID))
+	respCity, err := um.GetUserPreferences(int64(requestID))
 	if respCity != requestCity || err != nil {
 		t.Fatal("results don't match")
 	}
@@ -62,7 +62,7 @@ func TestDBSet(t *testing.T) {
 		testCommandTag,
 		nil,
 	)
-	err := um.SetUserPreference(requestID, requestCity)
+	err := um.SetUserPreference(int64(requestID), requestCity)
 	if err != nil {
 		t.Fatal("update error: ", err)
 	}
@@ -75,7 +75,7 @@ func TestDBSet(t *testing.T) {
 		testCommandTag,
 		pgx.ErrNoRows,
 	)
-	err = um.SetUserPreference(requestID, requestCity)
+	err = um.SetUserPreference(int64(requestID), requestCity)
 	if err == nil {
 		t.Fatal("err must not be nil")
 	}
@@ -91,7 +91,7 @@ func TestDBSet(t *testing.T) {
 		testCommandTag,
 		nil,
 	)
-	err = um.CreateUserPreferences(requestID, requestCity)
+	err = um.CreateUserPreferences(int64(requestID), requestCity)
 	if err != nil {
 		t.Fatal("insertion error: ", err)
 	}
@@ -104,7 +104,7 @@ func TestDBSet(t *testing.T) {
 		testCommandTag,
 		pgx.ErrNoRows,
 	)
-	err = um.CreateUserPreferences(requestID, requestCity)
+	err = um.CreateUserPreferences(int64(requestID), requestCity)
 	if err == nil {
 		t.Fatal("err must not be nil")
 	}

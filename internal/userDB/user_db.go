@@ -2,6 +2,7 @@ package userdb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -22,7 +23,7 @@ type UserManager struct {
 }
 
 type User struct {
-	Id     int32
+	Id     int64
 	City   string
 	Status int32
 }
@@ -49,9 +50,9 @@ func NewUserDB(cfg DBConfig) *UserManager {
 	}
 }
 
-func (um *UserManager) GetUserPreferences(id int32) (string, error) {
+func (um *UserManager) GetUserPreferences(id int64) (string, error) {
 	um.Mu.RLock()
-	row := um.Pool.QueryRow(context.Background(), "SELECT user_id, city FROM preferences where user_id = $1", id)
+	row := um.Pool.QueryRow(context.Background(), "SELECT user_id, city FROM preferences where user_id = $1;", id)
 	um.Mu.RUnlock()
 	var out string
 	var respID int32
@@ -62,9 +63,9 @@ func (um *UserManager) GetUserPreferences(id int32) (string, error) {
 	return out, nil
 }
 
-func (um *UserManager) SetUserPreference(id int32, cityName string) error {
+func (um *UserManager) SetUserPreference(id int64, cityName string) error {
 	um.Mu.RLock()
-	tg, err := um.Pool.Exec(context.Background(), "UPDATE preferences SET city = $1 WHERE user_id = $2", cityName, id)
+	tg, err := um.Pool.Exec(context.Background(), "UPDATE preferences SET city = $1 WHERE user_id = $2;", cityName, id)
 	um.Mu.RUnlock()
 	if err == nil && tg.RowsAffected() == 0 {
 		err = um.CreateUserPreferences(id, cityName)
@@ -77,19 +78,17 @@ func (um *UserManager) SetUserPreference(id int32, cityName string) error {
 	return nil
 }
 
-func (um *UserManager) CreateUserPreferences(id int32, cityName string) error {
+func (um *UserManager) CreateUserPreferences(id int64, cityName string) error {
 	um.Mu.Lock()
 	defer um.Mu.Unlock()
-	_, err := um.Pool.Exec(context.Background(), "INSERT INTO preferences(user_id, city) VALUES ($1, $2)", id, cityName)
+	_, err := um.Pool.Exec(context.Background(), "INSERT INTO preferences(user_id, city) VALUES ($1, $2);", id, cityName)
 	return err
 }
 
 // Returns all info about user.
-// If there is not user with given id,
-// returns pgx.ErrNoRows
-func (um *UserManager) GetUser(id int32) (*User, error) {
+func (um *UserManager) GetUser(id int64) (*User, error) {
 	um.Mu.RLock()
-	row := um.Pool.QueryRow(context.Background(), "SELECT city, status FROM preferences WHERE user_id = $1", id)
+	row := um.Pool.QueryRow(context.Background(), "SELECT city, status FROM preferences WHERE user_id = $1;", id)
 	um.Mu.RUnlock()
 	var out User
 	err := row.Scan(&out.City, &out.Status)
@@ -98,4 +97,38 @@ func (um *UserManager) GetUser(id int32) (*User, error) {
 	}
 	out.Id = id
 	return &out, nil
+}
+
+func (um *UserManager) CheckUserExist(id int64) (bool, error) {
+	um.Mu.RLock()
+	row := um.Pool.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM preferences WHERE user_id = $1);", id)
+	um.Mu.RUnlock()
+	var result bool
+	err := row.Scan(&result)
+	if err != nil {
+		return false, err
+	}
+	return result, nil
+}
+
+func (um *UserManager) SetUser(u User) error {
+	um.Mu.Lock()
+	tg, err := um.Pool.Exec(context.Background(), "UPDATE preferences SET city = $1, status = $2 WHERE user_id = $3;",
+		u.City,
+		u.Status,
+		u.Id,
+	)
+	if err != nil {
+		return err
+	}
+	if tg.RowsAffected() == 0 {
+		return errors.New("SetUser error: user doesn't exist")
+	}
+	return nil
+}
+
+func (um *UserManager) CreateUser(id int64) error {
+	um.Mu.Lock()
+	_, err := um.Pool.Exec(context.Background(), "INSERT INTO preferences(user_id) VALUES ($1);", id)
+	return err
 }
