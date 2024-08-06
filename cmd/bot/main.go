@@ -31,7 +31,7 @@ func init() {
 
 func main() {
 	logger := logger.NewSLogger()
-	dial, err := grpc.NewClient(":8081", grpc.WithInsecure())
+	dial, err := grpc.NewClient("weather_service:8081", grpc.WithInsecure())
 	if err != nil {
 		logger.Fatal(context.Background(), err)
 	}

@@ -64,7 +64,7 @@ func (b *Bot) Serve() {
 		if update.Message == nil { // ignore non-Message updates
 			continue
 		}
-		go b.handleMessage(update)
+		b.handleMessage(update)
 	}
 }
 

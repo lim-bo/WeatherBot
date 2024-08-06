@@ -1,10 +1,10 @@
 @Phony: runService
 runService:
-	bin/weather
+	bin/weather.exe
 
 @Phony: runBot
 runBot:
-	bin/bot
+	bin/bot.exe
 
 @Phony: test
 test:
@@ -12,5 +12,5 @@ test:
 	
 @Phony: build
 build:
-	go build -o bin/bot cmd/bot/main.go
-	go build -o bin/weather cmd/weatherApi/main.go
+	go build -o bin/bot.exe cmd/bot/main.go
+	go build -o bin/weather.exe cmd/weatherApi/main.go

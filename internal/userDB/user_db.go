@@ -42,7 +42,7 @@ func NewUserDB(cfg DBConfig) *UserManager {
 		fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", cfg.User, cfg.Pass, cfg.Host, cfg.Port, cfg.DBName),
 	)
 	if err != nil {
-		log.Fatal("db connection error", err)
+		log.Fatal("db connection error: ", err)
 	}
 	return &UserManager{
 		Pool: pool,
@@ -113,6 +113,7 @@ func (um *UserManager) CheckUserExist(id int64) (bool, error) {
 
 func (um *UserManager) SetUser(u User) error {
 	um.Mu.Lock()
+	defer um.Mu.Unlock()
 	tg, err := um.Pool.Exec(context.Background(), "UPDATE preferences SET city = $1, status = $2 WHERE user_id = $3;",
 		u.City,
 		u.Status,
@@ -129,6 +130,7 @@ func (um *UserManager) SetUser(u User) error {
 
 func (um *UserManager) CreateUser(id int64) error {
 	um.Mu.Lock()
+	defer um.Mu.Unlock()
 	_, err := um.Pool.Exec(context.Background(), "INSERT INTO preferences(user_id) VALUES ($1);", id)
 	return err
 }

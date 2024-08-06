@@ -33,10 +33,10 @@ func main() {
 		User:   v.GetString("DB_USER"),
 		Pass:   v.GetString("DB_PASSWORD"),
 		DBName: v.GetString("DB_NAME"),
-		Host:   "localhost",
-		Port:   "5430",
+		Host:   "postgres_container",
+		Port:   "5432",
 	}
-	srv := weatherApi.NewWeatherApiSever(v.GetString("WEATHER_API_KEY"), dbCfg)
+	srv := weatherApi.NewWeatherApiServer(v.GetString("WEATHER_API_KEY"), dbCfg)
 	lis, err := net.Listen("tcp", ":8081")
 	if err != nil {
 		log.Fatal(err)

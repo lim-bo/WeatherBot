@@ -24,7 +24,7 @@ type WeatherApiServer struct {
 	UnimplementedWeatherCastServiceServer
 }
 
-func NewWeatherApiSever(apikey string, dbCfg userdb.DBConfig) *WeatherApiServer {
+func NewWeatherApiServer(apikey string, dbCfg userdb.DBConfig) *WeatherApiServer {
 	return &WeatherApiServer{
 		repo:        weather.New(apikey),
 		userManager: userdb.NewUserDB(dbCfg),

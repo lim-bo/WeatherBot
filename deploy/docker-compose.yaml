@@ -1,6 +1,7 @@
 version: '3.9'
 services:
   postgres:
+    hostname: postgres
     image: postgres:14.8-alpine3.18
     container_name: postgres_container
     ports:
@@ -16,6 +17,36 @@ services:
       POSTGRES_DB: ${DB_NAME}
       PGDATA: /var/lib/postgresql/data/pgdata
     restart: unless-stopped
+    networks:
+      - default
+  bot_service:
+    container_name: bot_service
+    links:
+      - weather_service
+    image: weatherApp/bot
+    build:
+      context: ../
+      dockerfile: deploy/bot/Dockerfile
+    depends_on:
+      - weather_service
+    restart: unless-stopped
+    networks:
+      - default
+  weather_service:
+    container_name: weather_service
+    links:
+      - postgres
+    image: weatherApp/service
+    restart: always
+    environment:
+      WAIT_HOSTS: postgres:5432
+    depends_on:
+      - postgres
+    ports:
+      - 8081:8081
+    build: 
+      context: ../
+      dockerfile: deploy/weather_service/Dockerfile
     networks:
       - default
 

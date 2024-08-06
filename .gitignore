@@ -2,3 +2,4 @@
 configs/secret.yaml
 bin/
 .vscode
+*.pem

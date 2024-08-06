@@ -27,12 +27,12 @@ type OwmRepo struct {
 func New(key string) *OwmRepo {
 	sl := logger.NewSLogger()
 	owm := OwmRepo{logger: sl}
-
 	owm.apiKey = key
+
 	cl := &http.Client{
 		Transport: &http.Transport{
 			Dial: (&net.Dialer{
-				Timeout:   60 * time.Second,
+				Timeout:   30 * time.Second,
 				KeepAlive: 30 * time.Second,
 			}).Dial,
 			TLSHandshakeTimeout: 60 * time.Second,
