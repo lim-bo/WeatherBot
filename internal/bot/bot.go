@@ -39,6 +39,7 @@ var keyBoard = tgbot.NewReplyKeyboard(
 	tgbot.NewKeyboardButtonRow(
 		tgbot.NewKeyboardButton("Текущая погода"),
 		tgbot.NewKeyboardButton("Сменить город"),
+		tgbot.NewKeyboardButton("Прогноз на 3 суток"),
 	),
 )
 
@@ -132,6 +133,8 @@ func (b *Bot) handleMessage(update tgbot.Update) {
 		command = "current"
 	case "Сменить город":
 		command = "change"
+	case "Прогноз на 3 суток":
+		command = "3days"
 	}
 	if command == "" {
 		b.SendWarn(chatId, "Выберите команду из предложенных")
@@ -176,13 +179,34 @@ func (b *Bot) handleMessage(update tgbot.Update) {
 		// Getting string representation of weathercast
 		// from grpc service via client
 		weatherCast.PrefCityName = user.City
-		cast, err := b.WCClient.MakeCurrentWeatherCast(context.Background(), weatherCast)
+		cast, _ := b.WCClient.MakeCurrentWeatherCast(context.Background(), weatherCast)
+		_, err = b.api.Send(tgbot.NewMessage(chatId, cast.Text))
+		if err != nil {
+			b.Logger.Error(context.Background(), err)
+		}
+	case "3days":
+		// Handling situation if user didn't choose city for cast
+		if user.City == "" {
+			b.SendWarn(chatId, "Город не выбран,\nдля получения прогноза укажите город")
+			return
+		}
+
+		foreCast, err := b.WCClient.Get3DayForecast(context.Background(), &weatherApi.City{Name: user.City})
 		if err != nil {
 			b.Logger.Error(context.Background(), err)
 			return
+		} else {
+			b.Logger.LogWithGroupAtLevel(context.Background(),
+				logger.LevelInfo,
+				"weather forecast request",
+				slog.String("city", user.City),
+				slog.String("user", update.Message.From.UserName),
+			)
 		}
-		response := tgbot.NewMessage(chatId, cast.Text)
-		_, err = b.api.Send(response)
+
+		foreCast.PrefCityName = user.City
+		cast, _ := b.WCClient.Make3DayForecast(context.Background(), foreCast)
+		_, err = b.api.Send(tgbot.NewMessage(chatId, cast.Text))
 		if err != nil {
 			b.Logger.Error(context.Background(), err)
 		}
