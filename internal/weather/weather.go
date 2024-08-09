@@ -80,16 +80,25 @@ func (o *OwmRepo) GetCurrentWeather(cityName string) (*entity.WeatherCast, error
 var currentWeatherTmpl = "Локация: %s\nТекущая температура: %d°C, по ощущениям: %d°C\nСкорость ветра: %d м/c\nНаправление ветра: %d°"
 
 func (o *OwmRepo) MakeCurrentWeatherCast(wc *entity.WeatherCast, cityName string) string {
-	return fmt.Sprintf(currentWeatherTmpl, cityName, int64(wc.Main["temp"])-273,
-		int64(wc.Main["feels_like"])-273,
-		int64(wc.Wind["speed"]),
-		int64(wc.Wind["deg"]),
+	return fmt.Sprintf(currentWeatherTmpl, cityName, int16(wc.Main["temp"])-273,
+		int16(wc.Main["feels_like"])-273,
+		int16(wc.Wind["speed"]),
+		int16(wc.Wind["deg"]),
 	)
 }
 
-func (o *OwmRepo) Get3DayForecast(cityName string) ([]*entity.WeatherCast, error) {
-	out := make([]*entity.WeatherCast, 0)
+func (o *OwmRepo) Make3DayForecast(fc *entity.Forecast, cityName string) string {
+	out := "Прогноз на 3 суток с интервалом в 3 часа (МСК: UTC+3)\n"
+	timeStampTmpl := "-- %s Температура:%d°C, скорость ветра: %dм/c\n"
+	var timeStr string
+	for _, wc := range fc.List {
+		timeStr = time.Unix(wc.Dt, 0).Format(time.DateTime)
+		out += fmt.Sprintf(timeStampTmpl, timeStr, int16(wc.Main["temp"])-273, int16(wc.Wind["speed"]))
+	}
+	return out
+}
 
+func (o *OwmRepo) Get3DayForecast(cityName string) (*entity.Forecast, error) {
 	req, err := http.NewRequest(http.MethodGet, forecastURL, nil)
 	if err != nil {
 		return nil, errors.New("owm error: " + err.Error())
@@ -121,6 +130,5 @@ func (o *OwmRepo) Get3DayForecast(cityName string) ([]*entity.WeatherCast, error
 	if err != nil {
 		return nil, errors.New("owm unmarshalling error: " + err.Error())
 	}
-	out = append(out, &fc.List[0], &fc.List[7], &fc.List[15], &fc.List[23])
-	return out, nil
+	return &fc, nil
 }

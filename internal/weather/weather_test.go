@@ -2,6 +2,7 @@ package weather_test
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"testing"
 	"weatherbot/internal/weather"
@@ -54,4 +55,13 @@ func TestCurrentWeather(t *testing.T) {
 		}
 		t.Log(cast)
 	}
+}
+
+func TestForecast(t *testing.T) {
+	testRepo := weather.New(v.GetString("WEATHER_API_KEY"))
+	fc, err := testRepo.Get3DayForecast("Ростов-на-Дону")
+	if err != nil {
+		t.Fatal("repo error: ", err)
+	}
+	fmt.Println(fc)
 }

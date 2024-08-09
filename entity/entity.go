@@ -12,3 +12,14 @@ type WeatherCastError struct {
 	Message      string `json:"message"`
 	Params       []string
 }
+
+type ForecastUnit struct {
+	Dt   int64              `json:"dt"`
+	Main map[string]float64 `json:"main"`
+	Wind map[string]float64 `json:"wind"`
+}
+
+type Forecast struct {
+	ResponseCode int
+	List         []*ForecastUnit
+}
