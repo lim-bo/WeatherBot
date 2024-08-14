@@ -1,7 +1,6 @@
 package weather_test
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"testing"
@@ -44,7 +43,7 @@ func TestCurrentWeather(t *testing.T) {
 		},
 		{
 			"asdajdkajwasd",
-			errors.New("bad request"),
+			weather.ErrBadRequest,
 		},
 	}
 	testRepo := weather.New(v.GetString("WEATHER_API_KEY"))
@@ -57,6 +56,8 @@ func TestCurrentWeather(t *testing.T) {
 	}
 }
 
+// For now test is using only for checking if method works
+// TO-DO: code a normal tests))
 func TestForecast(t *testing.T) {
 	testRepo := weather.New(v.GetString("WEATHER_API_KEY"))
 	fc, err := testRepo.Get3DayForecast("Ростов-на-Дону")

@@ -42,6 +42,7 @@ services:
       WAIT_HOSTS: postgres:5432
     depends_on:
       - postgres
+      - redis
     ports:
       - 8081:8081
     build: 
@@ -49,7 +50,31 @@ services:
       dockerfile: deploy/weather_service/Dockerfile
     networks:
       - default
+  redis:
+    image: redis:alpine
+    container_name: redis_container
+    volumes:
+      - redisdata:/data
+      - ../configs/redis.conf:/usr/local/etc/redis/redis.conf
+    command: "redis-server /usr/local/etc/redis/redis.conf"
+    ports:
+      - 6380:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL,CONFIG
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_USER=${REDIS_USER}
+      - REDIS_USER_PASSWORD=${REDIS_USER_PASSWORD}
+
 
     
 volumes:
   pgdata:
+  redisdata:

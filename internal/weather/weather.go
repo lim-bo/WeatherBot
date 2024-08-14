@@ -15,6 +15,7 @@ import (
 var (
 	currentWeatherURL = "https://api.openweathermap.org/data/2.5/weather"
 	forecastURL       = "https://api.openweathermap.org/data/2.5/forecast"
+	ErrBadRequest     = errors.New("bad request")
 )
 
 // WeatherRepo implementation for OperWeatherMap api
@@ -63,7 +64,7 @@ func (o *OwmRepo) GetCurrentWeather(cityName string) (*entity.WeatherCast, error
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("bad request")
+		return nil, ErrBadRequest
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -118,7 +119,7 @@ func (o *OwmRepo) Get3DayForecast(cityName string) (*entity.Forecast, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("bad request")
+		return nil, ErrBadRequest
 	}
 
 	body, err := io.ReadAll(resp.Body)
