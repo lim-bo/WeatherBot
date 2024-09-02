@@ -36,7 +36,7 @@ type DBConfig struct {
 	Port   string
 }
 
-func NewUserDB(cfg DBConfig) *UserManager {
+func New(cfg DBConfig) *UserManager {
 	pool, err := pgxpool.Connect(
 		context.Background(),
 		fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", cfg.User, cfg.Pass, cfg.Host, cfg.Port, cfg.DBName),
@@ -111,7 +111,7 @@ func (um *UserManager) CheckUserExist(id int64) (bool, error) {
 	return result, nil
 }
 
-func (um *UserManager) SetUser(u User) error {
+func (um *UserManager) SetUser(u *User) error {
 	um.Mu.Lock()
 	defer um.Mu.Unlock()
 	tg, err := um.Pool.Exec(context.Background(), "UPDATE preferences SET city = $1, status = $2 WHERE user_id = $3;",

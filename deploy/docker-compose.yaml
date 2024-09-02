@@ -56,10 +56,10 @@ services:
     volumes:
       - redisdata:/data
       - ../configs/redis.conf:/usr/local/etc/redis/redis.conf
-    command: "redis-server /usr/local/etc/redis/redis.conf"
+    command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD} 
     ports:
       - 6380:6379
-    healthcheck:
+    healthcheck:  
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s

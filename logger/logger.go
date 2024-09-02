@@ -31,7 +31,7 @@ var levelNames = map[slog.Leveler]string{
 }
 
 // Returns new slog wrap
-func NewSLogger() *SLogger {
+func New() *SLogger {
 	opts := slog.HandlerOptions{
 		Level: LevelTrace,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {

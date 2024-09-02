@@ -27,7 +27,7 @@ type OwmRepo struct {
 }
 
 func New(key string) *OwmRepo {
-	sl := logger.NewSLogger()
+	sl := logger.New()
 	owm := OwmRepo{logger: sl}
 	owm.apiKey = key
 

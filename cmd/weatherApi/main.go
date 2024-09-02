@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	userdb "weatherbot/internal/userDB"
+	usercache "weatherbot/internal/usersCache"
 	"weatherbot/internal/weatherApi"
 
 	"github.com/spf13/viper"
@@ -36,7 +37,14 @@ func main() {
 		Host:   "postgres_container",
 		Port:   "5432",
 	}
-	srv := weatherApi.NewWeatherApiServer(v.GetString("WEATHER_API_KEY"), dbCfg)
+	redisCfg := usercache.RedisCfg{
+		Host:     "redis_container",
+		Port:     "6379",
+		Username: "",
+		Pass:     v.GetString("REDIS_PASSWORD"),
+		ID:       0,
+	}
+	srv := weatherApi.New(v.GetString("WEATHER_API_KEY"), dbCfg, redisCfg)
 	lis, err := net.Listen("tcp", ":8081")
 	if err != nil {
 		log.Fatal(err)

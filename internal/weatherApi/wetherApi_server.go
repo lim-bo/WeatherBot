@@ -2,16 +2,19 @@ package weatherApi
 
 import (
 	"context"
+	"errors"
+	"sync"
 	"weatherbot/entity"
 	userdb "weatherbot/internal/userDB"
+	usercache "weatherbot/internal/usersCache"
 	"weatherbot/internal/weather"
 	"weatherbot/logger"
 )
 
 // Repository for manage users' info
-type UserManagerI interface {
+type UserManager interface {
 	GetUser(int64) (*userdb.User, error)
-	SetUser(userdb.User) error
+	SetUser(*userdb.User) error
 	CheckUserExist(int64) (bool, error)
 	CreateUser(int64) error
 }
@@ -23,19 +26,26 @@ type WeatherRepo interface {
 	Make3DayForecast(*entity.Forecast, string) string
 }
 
+type UserCache interface {
+	GetUser(int64) (*userdb.User, error)
+	SetUser(*userdb.User) error
+}
+
 type WeatherApiServer struct {
-	repo        WeatherRepo
-	userManager UserManagerI
-	lg          *logger.SLogger
+	repo WeatherRepo
+	um   UserManager
+	uc   UserCache
+	lg   *logger.SLogger
 
 	UnimplementedWeatherCastServiceServer
 }
 
-func NewWeatherApiServer(apikey string, dbCfg userdb.DBConfig) *WeatherApiServer {
+func New(apikey string, dbCfg userdb.DBConfig, redisCfg usercache.RedisCfg) *WeatherApiServer {
 	return &WeatherApiServer{
-		repo:        weather.New(apikey),
-		userManager: userdb.NewUserDB(dbCfg),
-		lg:          logger.NewSLogger(),
+		repo: weather.New(apikey),
+		um:   userdb.New(dbCfg),
+		lg:   logger.New(),
+		uc:   usercache.New(redisCfg),
 	}
 }
 
@@ -100,10 +110,26 @@ func (srv *WeatherApiServer) MakeCurrentWeatherCast(ctx context.Context, wc *Wea
 }
 
 func (srv *WeatherApiServer) GetUser(ctx context.Context, id *UID) (*User, error) {
-	u, err := srv.userManager.GetUser(id.Value)
+	// searching required uid in redis first:
+	u, err := srv.uc.GetUser(id.Value)
+	// if there is no such uid, searching in sqlDB:
 	if err != nil {
-		srv.lg.Error(context.Background(), err)
-		return nil, err
+		if err == usercache.ErrKeyNotExist {
+			u, err = srv.um.GetUser(id.Value)
+			if err != nil {
+				srv.lg.Error(context.Background(), err)
+				return nil, err
+			}
+			// Caching user data
+			err = srv.uc.SetUser(u)
+			if err != nil {
+				srv.lg.Error(context.Background(), err)
+				return nil, err
+			}
+		} else {
+			srv.lg.Error(context.Background(), err)
+			return nil, err
+		}
 	}
 	return &User{
 		Id:     u.Id,
@@ -113,7 +139,7 @@ func (srv *WeatherApiServer) GetUser(ctx context.Context, id *UID) (*User, error
 }
 
 func (srv *WeatherApiServer) CheckUser(ctx context.Context, id *UID) (*IsExist, error) {
-	exist, err := srv.userManager.CheckUserExist(id.Value)
+	exist, err := srv.um.CheckUserExist(id.Value)
 	if err != nil {
 		srv.lg.Error(context.Background(), err)
 		return nil, err
@@ -127,20 +153,41 @@ func (srv *WeatherApiServer) CheckUser(ctx context.Context, id *UID) (*IsExist, 
 // how rpc works, get it with _, err := ...
 // TO-DO: fix it
 func (srv *WeatherApiServer) SetUser(ctx context.Context, u *User) (*Error, error) {
-	err := srv.userManager.SetUser(userdb.User{
-		Id:     u.Id,
-		City:   u.City,
-		Status: u.Status,
-	})
-	if err != nil {
-		srv.lg.Error(context.Background(), err)
-		return nil, err
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	var parentError error
+	go func() {
+		defer wg.Done()
+		err := srv.um.SetUser(&userdb.User{
+			Id:     u.Id,
+			City:   u.City,
+			Status: u.Status,
+		})
+		if err != nil {
+			parentError = errors.Join(parentError, err)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		err := srv.uc.SetUser(&userdb.User{
+			Id:     u.Id,
+			City:   u.City,
+			Status: u.Status,
+		})
+		if err != nil {
+			parentError = errors.Join(parentError, err)
+		}
+	}()
+	wg.Wait()
+	if parentError != nil {
+		srv.lg.Error(context.Background(), parentError)
+		return nil, parentError
 	}
 	return nil, nil
 }
 
 func (srv *WeatherApiServer) CreateUser(ctx context.Context, id *UID) (*Error, error) {
-	err := srv.userManager.CreateUser(id.Value)
+	err := srv.um.CreateUser(id.Value)
 	if err != nil {
 		srv.lg.Error(context.Background(), err)
 		return nil, err

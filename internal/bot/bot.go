@@ -23,7 +23,7 @@ type Bot struct {
 
 // Constructor
 func NewBot(token string, wcClient weatherApi.WeatherCastServiceClient) (*Bot, error) {
-	sl := logger.NewSLogger()
+	sl := logger.New()
 	newBot, err := tgbot.NewBotAPI(token)
 	if err != nil {
 		sl.Fatal(context.Background(), err)
@@ -79,17 +79,20 @@ func (b *Bot) SendWarn(chatId int64, text string) {
 }
 
 func (b *Bot) handleMessage(update tgbot.Update) {
+	ctx := context.Background()
 	chatId := update.Message.Chat.ID
 	// Checking if user with recieved chatid exist
-	exist, err := b.WCClient.CheckUser(context.Background(), &weatherApi.UID{
+	exist, err := b.WCClient.CheckUser(ctx, &weatherApi.UID{
 		Value: chatId,
 	})
 	if err != nil {
-		b.Logger.Error(context.Background(), err)
+		b.Logger.Error(ctx, err)
 		return
 	}
+
 	// if not, creating new user in db
 	if !exist.Value {
+
 		_, err := b.WCClient.CreateUser(context.Background(), &weatherApi.UID{Value: chatId})
 		if err != nil {
 			b.Logger.Error(context.Background(), err)
@@ -100,6 +103,9 @@ func (b *Bot) handleMessage(update tgbot.Update) {
 		if _, err := b.api.Send(msg); err != nil {
 			b.Logger.Error(context.Background(), err)
 		}
+		b.Logger.LogWithGroupAtLevel(ctx, logger.LevelInfo,
+			"new user registered",
+			slog.String("user", update.Message.From.UserName))
 	}
 	// Recieving user to work with it
 	user, err := b.WCClient.GetUser(context.Background(), &weatherApi.UID{Value: chatId})
@@ -108,7 +114,7 @@ func (b *Bot) handleMessage(update tgbot.Update) {
 		return
 	}
 	// Changing prerfered city to weathercast
-	if !update.Message.IsCommand() && user.Status == WaitingToRespState {
+	if user.Status == WaitingToRespState {
 		user.City = update.Message.Text
 		user.Status = DefaultState
 		_, err := b.api.Send(tgbot.NewMessage(chatId, "Принято"))
@@ -127,6 +133,7 @@ func (b *Bot) handleMessage(update tgbot.Update) {
 		}
 		return
 	}
+
 	var command string
 	switch update.Message.Text {
 	case "Текущая погода":
@@ -146,11 +153,15 @@ func (b *Bot) handleMessage(update tgbot.Update) {
 		// Getting bot ready to recieve name of the cuty
 		// which weather user want to get
 		user.Status = WaitingToRespState
-		b.WCClient.SetUser(context.Background(), &weatherApi.User{
+		_, err := b.WCClient.SetUser(context.Background(), &weatherApi.User{
 			Id:     user.Id,
 			City:   user.City,
 			Status: user.Status,
 		})
+		if err != nil {
+			b.Logger.Error(context.Background(), err)
+			return
+		}
 		response := tgbot.NewMessage(chatId, "Укажите город, к которому хотели бы получать прогноз")
 		if _, err := b.api.Send(response); err != nil {
 			b.Logger.Error(context.Background(), err)
