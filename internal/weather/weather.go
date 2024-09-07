@@ -10,6 +10,8 @@ import (
 	"time"
 	"weatherbot/entity"
 	"weatherbot/logger"
+
+	"github.com/enescakir/emoji"
 )
 
 var (
@@ -78,14 +80,31 @@ func (o *OwmRepo) GetCurrentWeather(cityName string) (*entity.WeatherCast, error
 	return &out, nil
 }
 
-var currentWeatherTmpl = "Локация: %s\nТекущая температура: %d°C, по ощущениям: %d°C\nСкорость ветра: %d м/c\nНаправление ветра: %d°"
+var currentWeatherTmpl = "Город: %s\nТекущая температура: %d°C, по ощущениям: %d°C\nСкорость ветра: %d м/c\nНаправление ветра: %d°\n"
+var freezzingWeatherMessage = "На улице реальная зима" + emoji.ColdFace.String() +
+	"\nСоветую закутаться как капуста)" + emoji.Gloves.String() + emoji.Scarf.String()
+var coldWeatherMessage = "Однако прохладно" + emoji.ConfusedFace.String() + "\nБудет не лишним накинуть легкую куртку" + emoji.Coat.String() +
+	"\nНа всякий случай следует захватить зонтик" + emoji.WinkingFace.String() + emoji.Umbrella.String()
+var warmWeatherMessage = "Тёпленько..." + emoji.SmilingFace.String() + "\nНо для пляжных шорт пока рановато" + emoji.WinkingFace.String()
+var hotWeatherMessage = "Печка" + emoji.HotFace.String() + "\nНастало время для легкой одежды и шоколадного мороженного" + emoji.TShirt.String() + emoji.Dress.String() + emoji.IceCream.String()
 
 func (o *OwmRepo) MakeCurrentWeatherCast(wc *entity.WeatherCast, cityName string) string {
-	return fmt.Sprintf(currentWeatherTmpl, cityName, int16(wc.Main["temp"])-273,
+	main := fmt.Sprintf(currentWeatherTmpl, cityName, int16(wc.Main["temp"])-273,
 		int16(wc.Main["feels_like"])-273,
 		int16(wc.Wind["speed"]),
 		int16(wc.Wind["deg"]),
 	)
+	switch {
+	case wc.Main["temp"] < -5.0:
+		main += freezzingWeatherMessage
+	case wc.Main["temp"] > -5.0 && wc.Main["temp"] < 10.0:
+		main += coldWeatherMessage
+	case wc.Main["temp"] > 10.0 && wc.Main["temp"] < 20.0:
+		main += warmWeatherMessage
+	case wc.Main["temp"] > 20.0:
+		main += hotWeatherMessage
+	}
+	return main
 }
 
 func (o *OwmRepo) Make3DayForecast(fc *entity.Forecast, cityName string) string {

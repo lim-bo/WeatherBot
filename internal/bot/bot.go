@@ -7,6 +7,7 @@ import (
 	"weatherbot/internal/weatherApi"
 	"weatherbot/logger"
 
+	emoji "github.com/enescakir/emoji"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -98,7 +99,9 @@ func (b *Bot) handleMessage(update tgbot.Update) {
 			b.Logger.Error(context.Background(), err)
 			return
 		}
-		msg := tgbot.NewMessage(chatId, "Приветствую))")
+		msg := tgbot.NewMessage(chatId, "Приветствую)) "+emoji.WavingHand.String()+
+			"\nЯ бот, который подскажет погоду в указанном вами городе.\n"+
+			"Для начала выберите город"+emoji.Cityscape.String())
 		msg.ReplyMarkup = keyBoard
 		if _, err := b.api.Send(msg); err != nil {
 			b.Logger.Error(context.Background(), err)
