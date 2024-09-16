@@ -1,10 +1,13 @@
 package weather
 
 import (
-	"encoding/json"
+	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
@@ -33,6 +36,13 @@ func New(key string) *OwmRepo {
 	owm := OwmRepo{logger: sl}
 	owm.apiKey = key
 
+	rootCAPool := x509.NewCertPool()
+	rootCA, err := ioutil.ReadFile("./certs/client-cert/cert.pem")
+	if err != nil {
+		sl.Fatal(context.Background(), err)
+	}
+	rootCAPool.AppendCertsFromPEM(rootCA)
+
 	cl := &http.Client{
 		Transport: &http.Transport{
 			Dial: (&net.Dialer{
@@ -40,6 +50,7 @@ func New(key string) *OwmRepo {
 				KeepAlive: 30 * time.Second,
 			}).Dial,
 			TLSHandshakeTimeout: 60 * time.Second,
+			TLSClientConfig:     &tls.Config{RootCAs: rootCAPool},
 		},
 	}
 	owm.cli = cl
@@ -73,7 +84,7 @@ func (o *OwmRepo) GetCurrentWeather(cityName string) (*entity.WeatherCast, error
 	if err != nil {
 		return nil, errors.New("owm reading error: " + err.Error())
 	}
-	err = json.Unmarshal(body, &out)
+	err = out.UnmarshalJSON(body)
 	if err != nil {
 		return nil, errors.New("owm unmarshalling error: " + err.Error())
 	}
@@ -142,11 +153,11 @@ func (o *OwmRepo) Get3DayForecast(cityName string) (*entity.Forecast, error) {
 	}
 
 	body, err := io.ReadAll(resp.Body)
-	if err != nil {
+	if err != nil || len(body) == 0 {
 		return nil, errors.New("owm reading error: " + err.Error())
 	}
 	var fc entity.Forecast
-	err = json.Unmarshal(body, &fc)
+	err = fc.UnmarshalJSON(body)
 	if err != nil {
 		return nil, errors.New("owm unmarshalling error: " + err.Error())
 	}

@@ -64,5 +64,8 @@ func TestForecast(t *testing.T) {
 	if err != nil {
 		t.Fatal("repo error: ", err)
 	}
+	if len(fc.List) == 0 {
+		t.Fatal("empty result error")
+	}
 	fmt.Println(fc)
 }

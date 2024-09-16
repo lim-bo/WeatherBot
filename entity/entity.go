@@ -1,5 +1,6 @@
 package entity
 
+//model:json
 type WeatherCast struct {
 	Coord        map[string]float64 `json:"coord"`
 	Main         map[string]float64 `json:"main"`
@@ -13,12 +14,14 @@ type WeatherCastError struct {
 	Params       []string
 }
 
+//model:json
 type ForecastUnit struct {
 	Dt   int64              `json:"dt"`
 	Main map[string]float64 `json:"main"`
 	Wind map[string]float64 `json:"wind"`
 }
 
+//model:json
 type Forecast struct {
 	ResponseCode int
 	List         []*ForecastUnit
