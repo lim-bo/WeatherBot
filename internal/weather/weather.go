@@ -1,13 +1,9 @@
 package weather
 
 import (
-	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
@@ -36,13 +32,6 @@ func New(key string) *OwmRepo {
 	owm := OwmRepo{logger: sl}
 	owm.apiKey = key
 
-	rootCAPool := x509.NewCertPool()
-	rootCA, err := ioutil.ReadFile("./certs/client-cert/cert.pem")
-	if err != nil {
-		sl.Fatal(context.Background(), err)
-	}
-	rootCAPool.AppendCertsFromPEM(rootCA)
-
 	cl := &http.Client{
 		Transport: &http.Transport{
 			Dial: (&net.Dialer{
@@ -50,7 +39,6 @@ func New(key string) *OwmRepo {
 				KeepAlive: 30 * time.Second,
 			}).Dial,
 			TLSHandshakeTimeout: 60 * time.Second,
-			TLSClientConfig:     &tls.Config{RootCAs: rootCAPool},
 		},
 	}
 	owm.cli = cl
@@ -106,13 +94,13 @@ func (o *OwmRepo) MakeCurrentWeatherCast(wc *entity.WeatherCast, cityName string
 		int16(wc.Wind["deg"]),
 	)
 	switch {
-	case wc.Main["temp"] < -5.0:
+	case wc.Main["temp"]-273 < 0.0:
 		main += freezzingWeatherMessage
-	case wc.Main["temp"] > -5.0 && wc.Main["temp"] < 10.0:
+	case wc.Main["temp"]-273 > 0.0 && wc.Main["temp"]-273 < 20.0:
 		main += coldWeatherMessage
-	case wc.Main["temp"] > 10.0 && wc.Main["temp"] < 20.0:
+	case wc.Main["temp"]-273 > 20.0 && wc.Main["temp"]-273 < 30.0:
 		main += warmWeatherMessage
-	case wc.Main["temp"] > 20.0:
+	case wc.Main["temp"]-273 > 30.0:
 		main += hotWeatherMessage
 	}
 	return main
