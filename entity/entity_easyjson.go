@@ -17,119 +17,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjson163c17a9DecodeWeatherbotEntity(in *jlexer.Lexer, out *WeatherCastError) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeFieldName(false)
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "cod":
-			out.ResponseCode = int(in.Int())
-		case "message":
-			out.Message = string(in.String())
-		case "Params":
-			if in.IsNull() {
-				in.Skip()
-				out.Params = nil
-			} else {
-				in.Delim('[')
-				if out.Params == nil {
-					if !in.IsDelim(']') {
-						out.Params = make([]string, 0, 4)
-					} else {
-						out.Params = []string{}
-					}
-				} else {
-					out.Params = (out.Params)[:0]
-				}
-				for !in.IsDelim(']') {
-					var v1 string
-					v1 = string(in.String())
-					out.Params = append(out.Params, v1)
-					in.WantComma()
-				}
-				in.Delim(']')
-			}
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson163c17a9EncodeWeatherbotEntity(out *jwriter.Writer, in WeatherCastError) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	{
-		const prefix string = ",\"cod\":"
-		out.RawString(prefix[1:])
-		out.Int(int(in.ResponseCode))
-	}
-	{
-		const prefix string = ",\"message\":"
-		out.RawString(prefix)
-		out.String(string(in.Message))
-	}
-	{
-		const prefix string = ",\"Params\":"
-		out.RawString(prefix)
-		if in.Params == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
-			out.RawString("null")
-		} else {
-			out.RawByte('[')
-			for v2, v3 := range in.Params {
-				if v2 > 0 {
-					out.RawByte(',')
-				}
-				out.String(string(v3))
-			}
-			out.RawByte(']')
-		}
-	}
-	out.RawByte('}')
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v WeatherCastError) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson163c17a9EncodeWeatherbotEntity(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v WeatherCastError) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson163c17a9EncodeWeatherbotEntity(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *WeatherCastError) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson163c17a9DecodeWeatherbotEntity(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *WeatherCastError) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson163c17a9DecodeWeatherbotEntity(l, v)
-}
-func easyjson163c17a9DecodeWeatherbotEntity1(in *jlexer.Lexer, out *WeatherCast) {
+func easyjson163c17a9DecodeWeatherbotEntity(in *jlexer.Lexer, out *WeatherCast) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -157,9 +45,9 @@ func easyjson163c17a9DecodeWeatherbotEntity1(in *jlexer.Lexer, out *WeatherCast)
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
-					var v4 float64
-					v4 = float64(in.Float64())
-					(out.Coord)[key] = v4
+					var v1 float64
+					v1 = float64(in.Float64())
+					(out.Coord)[key] = v1
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -173,9 +61,9 @@ func easyjson163c17a9DecodeWeatherbotEntity1(in *jlexer.Lexer, out *WeatherCast)
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
-					var v5 float64
-					v5 = float64(in.Float64())
-					(out.Main)[key] = v5
+					var v2 float64
+					v2 = float64(in.Float64())
+					(out.Main)[key] = v2
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -189,9 +77,9 @@ func easyjson163c17a9DecodeWeatherbotEntity1(in *jlexer.Lexer, out *WeatherCast)
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
-					var v6 float64
-					v6 = float64(in.Float64())
-					(out.Wind)[key] = v6
+					var v3 float64
+					v3 = float64(in.Float64())
+					(out.Wind)[key] = v3
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -208,7 +96,7 @@ func easyjson163c17a9DecodeWeatherbotEntity1(in *jlexer.Lexer, out *WeatherCast)
 		in.Consumed()
 	}
 }
-func easyjson163c17a9EncodeWeatherbotEntity1(out *jwriter.Writer, in WeatherCast) {
+func easyjson163c17a9EncodeWeatherbotEntity(out *jwriter.Writer, in WeatherCast) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -219,16 +107,16 @@ func easyjson163c17a9EncodeWeatherbotEntity1(out *jwriter.Writer, in WeatherCast
 			out.RawString(`null`)
 		} else {
 			out.RawByte('{')
-			v7First := true
-			for v7Name, v7Value := range in.Coord {
-				if v7First {
-					v7First = false
+			v4First := true
+			for v4Name, v4Value := range in.Coord {
+				if v4First {
+					v4First = false
 				} else {
 					out.RawByte(',')
 				}
-				out.String(string(v7Name))
+				out.String(string(v4Name))
 				out.RawByte(':')
-				out.Float64(float64(v7Value))
+				out.Float64(float64(v4Value))
 			}
 			out.RawByte('}')
 		}
@@ -240,16 +128,16 @@ func easyjson163c17a9EncodeWeatherbotEntity1(out *jwriter.Writer, in WeatherCast
 			out.RawString(`null`)
 		} else {
 			out.RawByte('{')
-			v8First := true
-			for v8Name, v8Value := range in.Main {
-				if v8First {
-					v8First = false
+			v5First := true
+			for v5Name, v5Value := range in.Main {
+				if v5First {
+					v5First = false
 				} else {
 					out.RawByte(',')
 				}
-				out.String(string(v8Name))
+				out.String(string(v5Name))
 				out.RawByte(':')
-				out.Float64(float64(v8Value))
+				out.Float64(float64(v5Value))
 			}
 			out.RawByte('}')
 		}
@@ -261,16 +149,16 @@ func easyjson163c17a9EncodeWeatherbotEntity1(out *jwriter.Writer, in WeatherCast
 			out.RawString(`null`)
 		} else {
 			out.RawByte('{')
-			v9First := true
-			for v9Name, v9Value := range in.Wind {
-				if v9First {
-					v9First = false
+			v6First := true
+			for v6Name, v6Value := range in.Wind {
+				if v6First {
+					v6First = false
 				} else {
 					out.RawByte(',')
 				}
-				out.String(string(v9Name))
+				out.String(string(v6Name))
 				out.RawByte(':')
-				out.Float64(float64(v9Value))
+				out.Float64(float64(v6Value))
 			}
 			out.RawByte('}')
 		}
@@ -286,27 +174,27 @@ func easyjson163c17a9EncodeWeatherbotEntity1(out *jwriter.Writer, in WeatherCast
 // MarshalJSON supports json.Marshaler interface
 func (v WeatherCast) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson163c17a9EncodeWeatherbotEntity1(&w, v)
+	easyjson163c17a9EncodeWeatherbotEntity(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v WeatherCast) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson163c17a9EncodeWeatherbotEntity1(w, v)
+	easyjson163c17a9EncodeWeatherbotEntity(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *WeatherCast) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson163c17a9DecodeWeatherbotEntity1(&r, v)
+	easyjson163c17a9DecodeWeatherbotEntity(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *WeatherCast) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson163c17a9DecodeWeatherbotEntity1(l, v)
+	easyjson163c17a9DecodeWeatherbotEntity(l, v)
 }
-func easyjson163c17a9DecodeWeatherbotEntity2(in *jlexer.Lexer, out *ForecastUnit) {
+func easyjson163c17a9DecodeWeatherbotEntity1(in *jlexer.Lexer, out *ForecastUnit) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -336,9 +224,9 @@ func easyjson163c17a9DecodeWeatherbotEntity2(in *jlexer.Lexer, out *ForecastUnit
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
-					var v10 float64
-					v10 = float64(in.Float64())
-					(out.Main)[key] = v10
+					var v7 float64
+					v7 = float64(in.Float64())
+					(out.Main)[key] = v7
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -352,9 +240,9 @@ func easyjson163c17a9DecodeWeatherbotEntity2(in *jlexer.Lexer, out *ForecastUnit
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
-					var v11 float64
-					v11 = float64(in.Float64())
-					(out.Wind)[key] = v11
+					var v8 float64
+					v8 = float64(in.Float64())
+					(out.Wind)[key] = v8
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -369,7 +257,7 @@ func easyjson163c17a9DecodeWeatherbotEntity2(in *jlexer.Lexer, out *ForecastUnit
 		in.Consumed()
 	}
 }
-func easyjson163c17a9EncodeWeatherbotEntity2(out *jwriter.Writer, in ForecastUnit) {
+func easyjson163c17a9EncodeWeatherbotEntity1(out *jwriter.Writer, in ForecastUnit) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -385,16 +273,16 @@ func easyjson163c17a9EncodeWeatherbotEntity2(out *jwriter.Writer, in ForecastUni
 			out.RawString(`null`)
 		} else {
 			out.RawByte('{')
-			v12First := true
-			for v12Name, v12Value := range in.Main {
-				if v12First {
-					v12First = false
+			v9First := true
+			for v9Name, v9Value := range in.Main {
+				if v9First {
+					v9First = false
 				} else {
 					out.RawByte(',')
 				}
-				out.String(string(v12Name))
+				out.String(string(v9Name))
 				out.RawByte(':')
-				out.Float64(float64(v12Value))
+				out.Float64(float64(v9Value))
 			}
 			out.RawByte('}')
 		}
@@ -406,16 +294,16 @@ func easyjson163c17a9EncodeWeatherbotEntity2(out *jwriter.Writer, in ForecastUni
 			out.RawString(`null`)
 		} else {
 			out.RawByte('{')
-			v13First := true
-			for v13Name, v13Value := range in.Wind {
-				if v13First {
-					v13First = false
+			v10First := true
+			for v10Name, v10Value := range in.Wind {
+				if v10First {
+					v10First = false
 				} else {
 					out.RawByte(',')
 				}
-				out.String(string(v13Name))
+				out.String(string(v10Name))
 				out.RawByte(':')
-				out.Float64(float64(v13Value))
+				out.Float64(float64(v10Value))
 			}
 			out.RawByte('}')
 		}
@@ -426,27 +314,27 @@ func easyjson163c17a9EncodeWeatherbotEntity2(out *jwriter.Writer, in ForecastUni
 // MarshalJSON supports json.Marshaler interface
 func (v ForecastUnit) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson163c17a9EncodeWeatherbotEntity2(&w, v)
+	easyjson163c17a9EncodeWeatherbotEntity1(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v ForecastUnit) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson163c17a9EncodeWeatherbotEntity2(w, v)
+	easyjson163c17a9EncodeWeatherbotEntity1(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *ForecastUnit) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson163c17a9DecodeWeatherbotEntity2(&r, v)
+	easyjson163c17a9DecodeWeatherbotEntity1(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *ForecastUnit) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson163c17a9DecodeWeatherbotEntity2(l, v)
+	easyjson163c17a9DecodeWeatherbotEntity1(l, v)
 }
-func easyjson163c17a9DecodeWeatherbotEntity3(in *jlexer.Lexer, out *Forecast) {
+func easyjson163c17a9DecodeWeatherbotEntity2(in *jlexer.Lexer, out *Forecast) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -465,9 +353,9 @@ func easyjson163c17a9DecodeWeatherbotEntity3(in *jlexer.Lexer, out *Forecast) {
 			continue
 		}
 		switch key {
-		case "ResponseCode":
-			out.ResponseCode = int(in.Int())
-		case "List":
+		case "cod":
+			out.ResponseCode = string(in.String())
+		case "list":
 			if in.IsNull() {
 				in.Skip()
 				out.List = nil
@@ -475,25 +363,17 @@ func easyjson163c17a9DecodeWeatherbotEntity3(in *jlexer.Lexer, out *Forecast) {
 				in.Delim('[')
 				if out.List == nil {
 					if !in.IsDelim(']') {
-						out.List = make([]*ForecastUnit, 0, 8)
+						out.List = make([]ForecastUnit, 0, 2)
 					} else {
-						out.List = []*ForecastUnit{}
+						out.List = []ForecastUnit{}
 					}
 				} else {
 					out.List = (out.List)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v14 *ForecastUnit
-					if in.IsNull() {
-						in.Skip()
-						v14 = nil
-					} else {
-						if v14 == nil {
-							v14 = new(ForecastUnit)
-						}
-						(*v14).UnmarshalEasyJSON(in)
-					}
-					out.List = append(out.List, v14)
+					var v11 ForecastUnit
+					(v11).UnmarshalEasyJSON(in)
+					out.List = append(out.List, v11)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -508,31 +388,27 @@ func easyjson163c17a9DecodeWeatherbotEntity3(in *jlexer.Lexer, out *Forecast) {
 		in.Consumed()
 	}
 }
-func easyjson163c17a9EncodeWeatherbotEntity3(out *jwriter.Writer, in Forecast) {
+func easyjson163c17a9EncodeWeatherbotEntity2(out *jwriter.Writer, in Forecast) {
 	out.RawByte('{')
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"ResponseCode\":"
+		const prefix string = ",\"cod\":"
 		out.RawString(prefix[1:])
-		out.Int(int(in.ResponseCode))
+		out.String(string(in.ResponseCode))
 	}
 	{
-		const prefix string = ",\"List\":"
+		const prefix string = ",\"list\":"
 		out.RawString(prefix)
 		if in.List == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
 			out.RawByte('[')
-			for v15, v16 := range in.List {
-				if v15 > 0 {
+			for v12, v13 := range in.List {
+				if v12 > 0 {
 					out.RawByte(',')
 				}
-				if v16 == nil {
-					out.RawString("null")
-				} else {
-					(*v16).MarshalEasyJSON(out)
-				}
+				(v13).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -543,23 +419,23 @@ func easyjson163c17a9EncodeWeatherbotEntity3(out *jwriter.Writer, in Forecast) {
 // MarshalJSON supports json.Marshaler interface
 func (v Forecast) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson163c17a9EncodeWeatherbotEntity3(&w, v)
+	easyjson163c17a9EncodeWeatherbotEntity2(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Forecast) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson163c17a9EncodeWeatherbotEntity3(w, v)
+	easyjson163c17a9EncodeWeatherbotEntity2(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Forecast) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson163c17a9DecodeWeatherbotEntity3(&r, v)
+	easyjson163c17a9DecodeWeatherbotEntity2(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Forecast) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson163c17a9DecodeWeatherbotEntity3(l, v)
+	easyjson163c17a9DecodeWeatherbotEntity2(l, v)
 }

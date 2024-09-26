@@ -145,6 +145,7 @@ func (o *OwmRepo) Get3DayForecast(cityName string) (*entity.Forecast, error) {
 		return nil, errors.New("owm reading error: " + err.Error())
 	}
 	var fc entity.Forecast
+	// unmarshalling error
 	err = fc.UnmarshalJSON(body)
 	if err != nil {
 		return nil, errors.New("owm unmarshalling error: " + err.Error())

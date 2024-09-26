@@ -3,6 +3,7 @@ package weatherApi
 import (
 	"context"
 	"errors"
+	"strconv"
 	"sync"
 	"weatherbot/entity"
 	userdb "weatherbot/internal/userDB"
@@ -77,17 +78,22 @@ func (srv *WeatherApiServer) Get3DayForecast(ctx context.Context, city *City) (*
 			Datetime: wc.Dt,
 		})
 	}
+	code, err := strconv.Atoi(fc.ResponseCode)
+	if err != nil {
+		srv.lg.Error(context.Background(), err)
+		return nil, err
+	}
 	return &Forecast{
-		StatusCode:   int32(fc.ResponseCode),
+		StatusCode:   int32(code),
 		List:         list,
 		PrefCityName: city.Name,
 	}, nil
 }
 
 func (srv *WeatherApiServer) Make3DayForecast(ctx context.Context, fc *Forecast) (*Cast, error) {
-	list := make([]*entity.ForecastUnit, 0)
+	list := make([]entity.ForecastUnit, 0)
 	for _, wc := range fc.List {
-		list = append(list, &entity.ForecastUnit{
+		list = append(list, entity.ForecastUnit{
 			Main: wc.Main,
 			Wind: wc.Wind,
 			// Adding 3 hours in sec to get UTC+3
